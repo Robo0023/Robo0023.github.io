@@ -1,0 +1,413 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>单例模式的两种实现 | 闪亮亮的碟形世界</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, minimum-scale=1">
+    
+    <meta name="author" content="赵禹博">
+    
+    <meta name="description" content="单例模式的三个要点：
+
+该类有且只有一个实例; 
+该类必须能够自行创建这个实例; 
+该类必须能够自行向整个系统提供这个实例。
+
+
+单例模式的实现步骤：
+
+为单例对象创建一个静态实例; 
+实现一个实例构造方法，重写allocWithZone方法; 
+实现 sharedSingleton，copyWit">
+    
+    
+    
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/pacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/pacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+  <body>
+    <header>
+      <div>
+		
+			<div id="imglogo">
+				<a href="/"><img src="/img/logo.svg" alt="闪亮亮的碟形世界" title="闪亮亮的碟形世界"/></a>
+			</div>
+			
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="闪亮亮的碟形世界">闪亮亮的碟形世界</a></h1>
+				<h2 class="blog-motto">赵禹博的iOS探索之路</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					
+						<li><a href="/">首页</a></li>
+					
+						<li><a href="/archives">归档</a></li>
+					
+						<li><a href="/tags">标签</a></li>
+					
+						<li><a href="/categories">分类</a></li>
+					
+					<li>
+					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="text" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="hidden" name="q" value="site:yoursite.com">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2016/05/10/单例/" title="单例模式的两种实现" itemprop="url">单例模式的两种实现</a>
+  </h1>
+  <p class="article-author">By
+    
+      <a href="http://yoursite.com" title="赵禹博">赵禹博</a>
+    </p>
+  <p class="article-time">
+    <time datetime="2016-05-10T06:15:21.000Z" itemprop="datePublished">2016-05-10</time>
+    更新日期:<time datetime="2016-05-10T07:07:41.000Z" itemprop="dateModified">2016-05-10</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		
+		<div id="toc" class="toc-article">
+			<strong class="toc-title">文章目录</strong>
+		
+		</div>
+		
+		<ul>
+<li><p>单例模式的三个要点：</p>
+<ul>
+<li>该类有且只有一个实例; </li>
+<li>该类必须能够自行创建这个实例; </li>
+<li>该类必须能够自行向整个系统提供这个实例。</li>
+</ul>
+</li>
+<li><p>单例模式的实现步骤：</p>
+<ul>
+<li>为单例对象创建一个静态实例; </li>
+<li>实现一个实例构造方法，重写allocWithZone方法; </li>
+<li>实现 sharedSingleton，copyWithZone，mutableCopyWithZone方法。</li>
+</ul>
+</li>
+<li><p>实现：下面我们来创建一只叫做Blinky的单例对象／妖怪</p>
+</li>
+</ul>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  NotesBlinky.h</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#import <span class="meta-string">&lt;UIKit/UIKit.h&gt;</span></span></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">NotesBlinky</span> : <span class="title">NSObject</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">@property</span>(<span class="keyword">nonatomic</span>, <span class="keyword">strong</span>) <span class="built_in">UIColor</span> *skinColor;</span><br><span class="line">+ (instancetype)sharedBlinky;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  NotesBlinky.m</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#import <span class="meta-string">"NotesBlinky.h"</span></span></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">NotesBlinky</span> ()&lt;<span class="title">NSCopying</span>&gt;</span></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">NotesBlinky</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> NotesBlinky *_blinky;</span><br><span class="line"><span class="comment">//最根本的方法，下边的shared什么的都会进到这里来，这个方法只能生成一次_blinky，就保证了单例</span></span><br><span class="line">+ (instancetype)allocWithZone:(<span class="keyword">struct</span> _<span class="built_in">NSZone</span> *)zone&#123;</span><br><span class="line">    <span class="keyword">if</span> (_blinky == <span class="literal">nil</span>) &#123;</span><br><span class="line">        _blinky = [<span class="keyword">super</span> allocWithZone:zone];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> _blinky;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">+ (instancetype)sharedBlinky&#123;</span><br><span class="line">    <span class="keyword">if</span> (_blinky == <span class="literal">nil</span>) &#123;</span><br><span class="line">        _blinky = [[<span class="keyword">self</span> alloc] init];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> _blinky;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">id</span>)copyWithZone:(<span class="built_in">NSZone</span> *)zone&#123;</span><br><span class="line">    <span class="keyword">return</span> _blinky;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">id</span>)mutableCopyWithZone:(nullable <span class="built_in">NSZone</span> *)zone&#123;</span><br><span class="line">    <span class="keyword">return</span> _blinky;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>验证一:在touchesBegan里验证是否为单例。验证代码如下</li>
+</ul>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//创建四只Blinky，看看是不是同一只妖怪</span></span><br><span class="line">NotesBlinky *blinky1 = [[NotesBlinky alloc] init];</span><br><span class="line"></span><br><span class="line">NotesBlinky *blinky2 = [[NotesBlinky alloc] init];</span><br><span class="line">blinky2.skinColor = [<span class="built_in">UIColor</span> redColor];</span><br><span class="line"></span><br><span class="line">NotesBlinky *blinky3 = [NotesBlinky sharedBlinky];</span><br><span class="line">NotesBlinky *blinky4 = [blinky3 <span class="keyword">copy</span>];</span><br><span class="line"></span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@"%@  %@  %@  %@"</span>, blinky1, blinky2, blinky3, blinky4);</span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@"%@  %@  %@  %@"</span>, blinky1.skinColor, blinky2.skinColor, blinky3.skinColor, blinky4.skinColor);</span><br></pre></td></tr></table></figure>
+<p></p><p>但是这种单例设计方式不太严谨：多线程的情况下，几个线程同时创建单例进入allocWithZone方法，就有可能创建多个妖怪。</p>  <p></p>
+<ul>
+<li>验证二:考虑多线程同时创建单例的情况，验证代码如下（实际上并不能验证。对于多线程情况，不加锁的话也很难同时进到一个方法里，我们只是规避这个可能性。）</li>
+</ul>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">    <span class="built_in">dispatch_async</span>(dispatch_get_global_queue(<span class="number">0</span>, <span class="number">0</span>), ^&#123;<span class="comment">//</span></span><br><span class="line">    <span class="comment">//线程1创建的妖怪，看看是不是同一只妖怪</span></span><br><span class="line">    NotesBlinky *blinky1 = [[NotesBlinky alloc] init];</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@-----%@"</span>, blinky1, [<span class="built_in">NSThread</span> currentThread]);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">dispatch_async</span>(dispatch_get_global_queue(<span class="number">0</span>, <span class="number">0</span>), ^&#123;<span class="comment">//</span></span><br><span class="line">    <span class="comment">//线程2创建的妖怪，看看是不是同一只妖怪</span></span><br><span class="line">    NotesBlinky *blinky2 = [[NotesBlinky alloc] init];</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@-----%@"</span>, blinky2, [<span class="built_in">NSThread</span> currentThread]);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="built_in">dispatch_async</span>(dispatch_get_global_queue(<span class="number">0</span>, <span class="number">0</span>), ^&#123;<span class="comment">//</span></span><br><span class="line">    <span class="comment">//线程3创建的妖怪，看看是不是同一只妖怪</span></span><br><span class="line">    NotesBlinky *blinky3 = [[NotesBlinky alloc] init];</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%@-----%@"</span>, blinky3, [<span class="built_in">NSThread</span> currentThread]);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p><br></p>
+<ul>
+<li>完善方案一: 对关键方法加锁，加锁的方法一次只在一个线程中执行</li>
+</ul>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">+ (instancetype)allocWithZone:(<span class="keyword">struct</span> _<span class="built_in">NSZone</span> *)zone&#123;</span><br><span class="line">    <span class="keyword">@synchronized</span>(<span class="keyword">self</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (_blinky == <span class="literal">nil</span>) &#123;</span><br><span class="line">            _blinky = [<span class="keyword">super</span> allocWithZone:zone];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> _blinky;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">+ (instancetype)sharedBlinky&#123;</span><br><span class="line">    <span class="keyword">@synchronized</span>(<span class="keyword">self</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (_blinky == <span class="literal">nil</span>) &#123;</span><br><span class="line">            _blinky = [[<span class="keyword">self</span> alloc] init];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> _blinky;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><br></p>
+<ul>
+<li>完善方案二: 对关键方法使用GCD</li>
+</ul>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">+ (instancetype)allocWithZone:(<span class="keyword">struct</span> _<span class="built_in">NSZone</span> *)zone&#123;</span><br><span class="line">    <span class="keyword">if</span> (_blinky == <span class="literal">nil</span>) &#123;</span><br><span class="line">        <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> predicate; <span class="comment">//断言，断定 (是否执行过一次)</span></span><br><span class="line">        <span class="built_in">dispatch_once</span>(&amp;predicate, ^&#123;</span><br><span class="line">            _blinky = [<span class="keyword">super</span> allocWithZone:zone];</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> _blinky;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">+ (instancetype)sharedBlinky&#123;</span><br><span class="line">    <span class="keyword">if</span> (_blinky == <span class="literal">nil</span>) &#123;</span><br><span class="line">        <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> predicate; <span class="comment">//断言，断定 (是否执行过一次)</span></span><br><span class="line">        <span class="built_in">dispatch_once</span>(&amp;predicate, ^&#123;</span><br><span class="line">            _blinky = [[<span class="keyword">self</span> alloc] init];</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> _blinky;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><br></p>
+<ul>
+<li>将单例实现方法抽取为宏</li>
+</ul>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  NotesSingleton.h</span></span><br><span class="line"><span class="comment">//  单例</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// .h</span></span><br><span class="line"><span class="meta">#define NotesSingletonH + (instancetype)sharedSingleton;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// .m</span></span><br><span class="line"><span class="meta">#define NotesSingletonM \</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">id</span> _singleton;\</span><br><span class="line">\</span><br><span class="line">+ (instancetype)allocWithZone:(<span class="keyword">struct</span> _<span class="built_in">NSZone</span> *)zone&#123;\</span><br><span class="line">    <span class="keyword">if</span> (_singleton == <span class="literal">nil</span>) &#123;\</span><br><span class="line">        <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> predicate;\</span><br><span class="line">        <span class="built_in">dispatch_once</span>(&amp;predicate, ^&#123;\</span><br><span class="line">            _singleton = [<span class="keyword">super</span> allocWithZone:zone];\</span><br><span class="line">        &#125;);\</span><br><span class="line">    &#125;\</span><br><span class="line">    <span class="keyword">return</span> _singleton;\</span><br><span class="line">&#125;\</span><br><span class="line">\</span><br><span class="line">+ (instancetype)sharedSingleton&#123;\</span><br><span class="line">    <span class="keyword">if</span> (_singleton == <span class="literal">nil</span>) &#123;\</span><br><span class="line">        <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> predicate;\</span><br><span class="line">        <span class="built_in">dispatch_once</span>(&amp;predicate, ^&#123;\</span><br><span class="line">            _singleton = [[<span class="keyword">self</span> alloc] init];\</span><br><span class="line">        &#125;);\</span><br><span class="line">    &#125;\</span><br><span class="line">    <span class="keyword">return</span> _singleton;\</span><br><span class="line">&#125;\</span><br><span class="line">\</span><br><span class="line">- (<span class="keyword">id</span>)copyWithZone:(<span class="built_in">NSZone</span> *)zone&#123;\</span><br><span class="line">    <span class="keyword">return</span> _singleton;\</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><br></p>
+<ul>
+<li>“单例实现方法宏”的使用</li>
+</ul>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  NotesCookie.h</span></span><br><span class="line"><span class="meta">#import <span class="meta-string">&lt;Foundation/Foundation.h&gt;</span></span></span><br><span class="line"><span class="meta">#import <span class="meta-string">"NotesSingleton.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">NotesCookie</span> : <span class="title">NSObject</span></span></span><br><span class="line"></span><br><span class="line">NotesSingletonH <span class="comment">//这样小饼干就声明了shared方法</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  NotesCookie.m</span></span><br><span class="line"><span class="meta">#import <span class="meta-string">"NotesCookie.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">NotesCookie</span></span></span><br><span class="line"></span><br><span class="line">NotesSingletonM  <span class="comment">//小饼干的单例构造方法</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>另外，单例模式可用于创建控制器，那就是单例的、不被销毁的控制器。</li>
+</ul>
+  
+	</div>
+		<footer class="article-footer clearfix">
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/技术总结/">技术总结</a><a href="/tags/线程相关/">线程相关</a><a href="/tags/单例/">单例</a>
+  </div>
+
+
+<div class="article-categories">
+  <span></span>
+  <a class="article-category-link" href="/categories/技术点/">技术点</a>
+</div>
+
+
+
+<div class="article-share" id="share">
+
+  <div data-url="http://yoursite.com/2016/05/10/单例/" data-title="单例模式的两种实现 | 闪亮亮的碟形世界" data-tsina="iOS救猫者" class="share clearfix">
+  </div>
+
+</div>
+</footer>   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+
+<div class="next">
+<a href="/2016/04/28/SeveralChips1/"  title="block传值">
+ <strong>NEXT:</strong><br/> 
+ <span>block传值
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+<section class="comment">
+	<div class="ds-thread"></div>
+</section>
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+  
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+<div class="categorieslist">
+	<p class="asidetitle">分类</p>
+		<ul>
+		
+			<li><a href="/categories/一点人生经验/" title="一点人生经验">一点人生经验<sup>5</sup></a></li>
+		
+			<li><a href="/categories/技术点/" title="技术点">技术点<sup>1</sup></a></li>
+		
+			<li><a href="/categories/杂项/" title="杂项">杂项<sup>1</sup></a></li>
+		
+		</ul>
+</div>
+
+
+  
+<div class="tagslist">
+	<p class="asidetitle">标签</p>
+		<ul class="clearfix">
+		
+			<li><a href="/tags/BS005项目/" title="BS005项目">BS005项目<sup>4</sup></a></li>
+		
+			<li><a href="/tags/WY01项目/" title="WY01项目">WY01项目<sup>1</sup></a></li>
+		
+			<li><a href="/tags/单例/" title="单例">单例<sup>1</sup></a></li>
+		
+			<li><a href="/tags/小tips/" title="小tips">小tips<sup>5</sup></a></li>
+		
+			<li><a href="/tags/属性测试/" title="属性测试">属性测试<sup>1</sup></a></li>
+		
+			<li><a href="/tags/技术总结/" title="技术总结">技术总结<sup>1</sup></a></li>
+		
+			<li><a href="/tags/线程相关/" title="线程相关">线程相关<sup>1</sup></a></li>
+		
+		</ul>
+</div>
+
+
+  
+  <div class="archiveslist">
+    <p class="asidetitle"><a href="/archives">归档</a></p>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/05/">五月 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/04/">四月 2016</a><span class="archive-list-count">6</span></li></ul>
+  </div>
+
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<div class="social-font clearfix">
+		
+		<a href="http://weibo.com/iOS救猫者 for http://weibo.com/u/3065705337?refer_flag=1001030102_&amp;is_all=1" target="_blank" title="weibo"></a>
+		
+		
+		
+		<a href="https://github.com/Robo0023 for https://github.com/Robo0023" target="_blank" title="github"></a>
+		
+		
+		
+	</div>
+		<p class="copyright">Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/A-limon/pacman" target="_blank" title="Pacman">Pacman</a> © 2016 
+		
+		<a href="http://yoursite.com" target="_blank" title="赵禹博">赵禹博</a>
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.1.0.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else
+    {
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      h  = $('article h2')
+      ah = $('article h2'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  if(ah.length==0){
+    t.css('display','none');
+  }else{
+    c.click(function(){
+      ta.css('display', 'block').addClass('fadeIn');
+    });
+    o.click(function(){
+      ta.css('display', 'none');
+    });
+    $(window).scroll(function(){
+      ta.css("top",Math.max(140,320-$(this).scrollTop()));
+    });
+  };
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina');
+  var html = [
+  '<a href="#" class="overlay" id="qrcode"></a>',
+  '<div class="qrcode clearfix"><span>扫描二维码分享到微信朋友圈</span><a class="qrclose" href="#share"></a><strong>Loading...Please wait</strong><img id="qrcode-pic" data-src="http://s.jiathis.com/qrcode.php?url=' + encodedUrl + '"/></div>',
+  '<a href="#textlogo" class="article-back-to-top" title="Top"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="QRcode"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="Weibo"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+  $('.article-share-qrcode').click(function(){
+    var imgSrc = $('#qrcode-pic').attr('data-src');
+    $('#qrcode-pic').attr('src', imgSrc);
+    $('#qrcode-pic').load(function(){
+        $('.qrcode strong').text(' ');
+    });
+  });
+});     
+</script>
+
+
+<script type="text/javascript">
+  var duoshuoQuery = {short_name:"robo0023"};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+</script> 
+
+
+
+
+
+  </body>
+</html>
